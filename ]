@@ -1,0 +1,130 @@
+use raylib::prelude::*;
+
+struct Circle {
+    radius: f32,
+    center: Vector2,
+}
+
+struct Player {
+    rect: Rectangle,
+    angle: f32,
+    radius: f32,
+    theta: f32,
+    speed: f32,
+}
+
+struct Enemy {
+    rect: Rectangle,
+    speed: f32,
+    angle: f32,
+    radius: f32,
+    theta: f32,
+}
+
+fn create_enemies(d: &mut RaylibDrawHandle, enemies: &mut Vec<Enemy>, n: i32) {
+    for i in 0..n {
+        enemies.push(Enemy {
+            rect: Rectangle::new(
+                0.0,
+                0.0,
+                30.0,
+                30.0,
+            ),
+            speed: 5.0,
+            angle: 0.0,
+            radius:15.0,
+            theta: 0.0,
+        });
+    }
+}
+
+fn draw_enemies(d: &mut RaylibDrawHandle, enemies: &mut Vec<Enemy>, n: i32) {
+    for i in 0..n {
+        d.draw_circle(enemies[i].rect.x as i32, enemies[i].rect.y as i32, cir.radius, Color::BLUE);
+    }
+}
+
+fn update_enemies(d: &mut RaylibDrawHandle, player: &mut Player, planet: &mut Circle) {
+}
+
+fn draw_planet(d: &mut RaylibDrawHandle, cir: &Circle) {
+    d.draw_circle(cir.center.x as i32, cir.center.y as i32, cir.radius, Color::ORANGE);
+}
+
+fn update_player(d: &mut RaylibDrawHandle, player: &mut Player, planet: &mut Circle) {
+    if d.is_key_down(KeyboardKey::KEY_D) {
+        player.theta += player.speed * d.get_frame_time();
+    }
+    if d.is_key_down(KeyboardKey::KEY_A) {
+        player.theta -= player.speed * d.get_frame_time();
+    }
+
+    let cx = planet.center.x;
+    let cy = planet.center.y;
+
+    let dx = cx - player.rect.x;
+    let dy = cy - player.rect.y;
+
+    let rotation_deg = (dy.atan2(-dx)).to_degrees();
+
+    player.rect.x = cx + player.radius * player.theta.cos();
+    player.rect.y = cy + player.radius * player.theta.sin();
+
+    player.angle = -rotation_deg + 90.0;
+}
+
+fn draw_player(d: &mut RaylibDrawHandle, player: &Player, thread: &RaylibThread, texture: &Texture2D){
+    //d.draw_ellipse(player.rect.x as i32, player.rect.y as i32, 60.0, 30.0, Color::LIGHTBLUE);
+    let src = Rectangle::new (
+        0.0,
+        0.0,
+        texture.width as f32,
+        texture.height as f32,
+    );
+
+    d.draw_texture_pro(texture, src, player.rect, Vector2::new(player.rect.width/2.0, player.rect.height/2.0), player.angle, Color::WHITE);
+}
+
+fn main() {
+    let (mut rl, thread) = raylib::init()
+        .size(1280, 960)
+        .title("Rusty ahh window")
+        .build();
+
+    let width = rl.get_screen_width();
+    let height = rl.get_screen_height();
+
+    let mut planet = Circle {
+        radius: 200.0,
+        center: Vector2::new(width as f32 / 2.0, height as f32 / 2.0),
+    };
+
+    let mut player = Player {
+        rect: Rectangle::new(
+            0.0,
+            0.0,
+            100.0,
+            100.0,
+        ),
+        angle: 0.0,
+        radius: 270.0,
+        theta: 0.0,
+        speed: 10.0,
+    };
+
+    let mut texture: Option<Texture2D> = None;
+    while !rl.window_should_close() {
+        let mut d = rl.begin_drawing(&thread);
+        if texture.is_none() {
+            texture = Some(d.load_texture(&thread, "ufo.png").unwrap());
+        }
+
+        d.clear_background(Color::WHITE);
+
+        draw_planet(&mut d, &planet);
+        update_player(&mut d, &mut player, &mut planet);
+        let tex = texture.as_ref().expect("Texture not loaded");
+        draw_player(&mut d, &player, &thread, &tex);
+
+    }
+}
