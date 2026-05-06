@@ -45,5 +45,5 @@ pub fn draw_player(d: &mut RaylibDrawHandle, player: &Player, thread: &RaylibThr
         texture.height as f32,
     );
 
-    d.draw_texture_pro(texture, src, player.rect, Vector2::new(player.rect.width/2.0, player.rect.height/2.0), player.angle, Color::WHITE);
+    d.draw_texture_pro(texture, src, player.rect, Vector2::new(player.rect.width/2.0, player.rect.height/2.0), player.angle, Color::ORANGE);
 }

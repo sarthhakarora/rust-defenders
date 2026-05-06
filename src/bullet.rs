@@ -87,6 +87,6 @@ pub fn draw_bullet(d: &mut RaylibDrawHandle, bullet: &Vec<Bullet>, texture: &Tex
     );
 
     for i in 0..bullet.len() {
-        d.draw_texture_pro(texture, src, bullet[i].rect, Vector2::new(bullet[i].rect.width/2.0, bullet[i].rect.height/2.0), bullet[i].angle, Color::RED);
+        d.draw_texture_pro(texture, src, bullet[i].rect, Vector2::new(bullet[i].rect.width/2.0, bullet[i].rect.height/2.0), bullet[i].angle, Color::WHITE);
     }
 }

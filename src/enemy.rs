@@ -3,13 +3,13 @@ use rand::Rng;
 
 use crate::types::Circle;
 use crate::player::*;
+use crate::bullet::*;
 
 #[repr(i32)]
 pub enum Type {
     ROCK_RED,
     ROCK_YELLOW,
     ROCK_GREEN,
-    ROCK_BLUE,
 }
 
 impl Type{
@@ -18,7 +18,6 @@ impl Type{
             0 => Some(Self::ROCK_RED),
             1 => Some(Self::ROCK_YELLOW),
             2 => Some(Self::ROCK_GREEN),
-            3 => Some(Self::ROCK_BLUE),
             _ => None,
         }
     }
@@ -31,6 +30,7 @@ pub struct Enemy {
     pub radius: f32,
     pub theta: f32,
     pub etype: Type,
+    pub offset: Vector2,
 }
 
 pub fn spawn_outside_screen(rng: &mut impl Rng) -> (f32, f32) {
@@ -68,19 +68,22 @@ pub fn create_enemies(enemies: &mut Vec<Enemy>, n: i32) {
 
     for i in 0..n {
         let (x, y) = spawn_outside_screen(&mut rng);
+        let mut sizex = rng.gen_range(15.0..60.0);
+        let mut sizey = rng.gen_range(15.0..60.0);
 
         enemies.push(Enemy {
             rect: Rectangle::new(
                 x,
                 y,
-                30.0,
-                30.0,
+                sizex,
+                sizey,
             ),
             speed:  rng.gen_range(30.0..200.0),
             angle:  rng.gen_range(0.0..360.0),
             radius: 15.0,
             theta:  0.0,
-            etype: Type::from_i32(rng.gen_range(0..4)).expect("eType Failed"),
+            etype: Type::from_i32(rng.gen_range(0..3)).expect("eType Failed"),
+            offset: Vector2::new(0.0, 0.0),
         });
     }
 }
@@ -95,28 +98,19 @@ pub fn draw_enemies(d: &mut RaylibDrawHandle, enemies: &Vec<Enemy>, texture: &Te
 
     for i in 0..enemies.len() {
         let mut color: Color;
-        let mut x: i32;
 
         match enemies[i].etype {
             Type::ROCK_RED      => {
                 color = Color::RED;
-                x = 0;
             }
             Type::ROCK_YELLOW   => { 
                 color = Color::new(255, 220, 90, 255);
-                x = 1;
             }
             Type::ROCK_GREEN    => {
                 color = Color::GREEN;
-                x = 2;
-            }
-            Type::ROCK_BLUE     => {
-                color = Color::CYAN;
-                x = 3;
             }
             _ => {
-                color = Color::CYAN;
-                x = 3;
+                color = Color::WHITE;
             }
         };
 
@@ -124,62 +118,63 @@ pub fn draw_enemies(d: &mut RaylibDrawHandle, enemies: &Vec<Enemy>, texture: &Te
     }
 }
 
-pub fn update_enemies(d: &mut RaylibDrawHandle, planet: &mut Circle, enemies: &mut Vec<Enemy>, player: &mut Player, dt: f32) {
+pub fn update_enemies(d: &mut RaylibDrawHandle, planet: &mut Circle, enemies: &mut Vec<Enemy>, bullets: &mut Vec<Bullet>, player: &mut Player, dt: f32) {
     let mut rng = rand::thread_rng();
 
     for i in 0..enemies.len() {
-
-        let playerCenter = Vector2 { 
+        let playerCenter = Vector2 {
             x: player.hitbox.center.x,
             y: player.hitbox.center.y 
         };
-        let planetCenter = Vector2 { 
+        let planetCenter = Vector2 {
             x: planet.center.x,
             y: planet.center.y 
         };
-        let enemyCenter  = Vector2 { 
+        let enemyCenter  = Vector2 {
             x: enemies[i].rect.x,
             y: enemies[i].rect.y,
         };
 
+        enemies[i].angle += enemies[i].speed * dt;
+
         let playerRadius = player.hitbox.radius;
         let planetRadius = planet.radius;
-        let enemyRadius  = enemies[i].radius;
 
-        if check_collision_circles(planetCenter, planetRadius, enemyCenter, enemyRadius) {
+        if enemies[i].rect.check_collision_circle_rec(planetCenter, planetRadius) {
             player.score -= 10;
             let (x, y) = spawn_outside_screen(&mut rng);
             enemies[i].rect.x = x;
             enemies[i].rect.y = y;
+            enemies[i].offset.x = rng.gen_range(-200.0..200.0);
+            enemies[i].offset.y = rng.gen_range(-200.0..200.0);
         }
 
-        if check_collision_circles(playerCenter, playerRadius, enemyCenter, enemyRadius) {
+        if enemies[i].rect.check_collision_circle_rec(playerCenter, playerRadius) {
             let mut contact_penalty: i32 = 0;
+
             match enemies[i].etype {
                 Type::ROCK_RED      => {
                     contact_penalty = -100;
                 }
-                Type::ROCK_YELLOW   => { 
+                Type::ROCK_YELLOW   => {
                     contact_penalty = -50;
                 }
                 Type::ROCK_GREEN    => {
-                    contact_penalty = 10;
-                }
-                Type::ROCK_BLUE     => {
                     contact_penalty = 100;
                 }
                 _ => {
                     contact_penalty = 0;
                 }
             };
+
             player.score -= contact_penalty;
             let (x, y) = spawn_outside_screen(&mut rng);
             enemies[i].rect.x = x;
             enemies[i].rect.y = y;
         }
 
-        let dx = planet.center.x - enemies[i].rect.x;
-        let dy = planet.center.y - enemies[i].rect.y;
+        let dx = planet.center.x + enemies[i].offset.x - enemies[i].rect.x;
+        let dy = planet.center.y + enemies[i].offset.y - enemies[i].rect.y;
 
         let dist = (dx * dx + dy * dy).sqrt();
 
