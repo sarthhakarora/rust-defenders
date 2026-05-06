@@ -1,17 +1,20 @@
 # Rust Defenders
 
-<p align="center">
-  <img src="rustplanet.png" width="220">
-</p>
-
-<p align="center">
-  <img src="readmeDemo.gif">
-</p>
+<p align="left">
+  <img src="rustplanet.png" width="180" align="left" style="margin-right: 20px;">
 
 A small orbital arcade game built in Rust using raylib.
 
-This was made mainly to learn Rust itself and not to be a polished game.
-Note: This is literally my first few lines of rust code ever so the code quality might be sub optimal (at best).
+This was made mainly to learn Rust itself and not to be a polished game.  
+Note: This is literally my first few lines of Rust code ever so the code quality might be sub optimal (at best).
+
+</p>
+
+<br clear="left"/>
+
+<p align="center">
+  <img src="demo.gif">
+</p>
 
 ---
 
